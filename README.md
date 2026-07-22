@@ -10,7 +10,7 @@ Atlas Corporation aesthetics · zero cloud · zero API keys · zero data egress.
 ![Next.js](https://img.shields.io/badge/Next.js-14-000000?logo=nextdotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)
 ![Tailwind](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)
-![Ollama](https://img.shields.io/badge/Ollama-Llama_3.1-black)
+![Ollama](https://img.shields.io/badge/Ollama-Llama_3.2-black)
 ![License](https://img.shields.io/badge/License-MIT-e8a33d)
 
 *"Awaiting your directive, Administrator."*
@@ -25,14 +25,15 @@ ATLAS (Autonomous Tactical Logistics & Analysis System) is a privacy-first AI as
 
 ## Features
 
-- **Streaming chat** with a local LLM (Ollama · Llama 3.1 by default) over Server-Sent Events
+- **Streaming chat** with a local LLM (Ollama · Llama 3.2 3B by default — fast even on 8 GB machines; swap in any larger model via `.env`) over Server-Sent Events
 - **Voice in**: offline speech-to-text (faster-whisper) with push-to-talk *and* always-listening mode with silence detection
 - **Voice out**: offline TTS (Piper, `en_US-ryan-high` — deep and authoritative)
 - **Persistent memory**: conversations, history, and preferences in SQLite
 - **Live telemetry**: CPU, RAM, disk, network, and uptime dashboard (psutil)
 - **Sandboxed file search** limited to directories you explicitly approve
 - **Safe command execution**: fixed allowlist, no shell, no user-supplied arguments, hard timeouts
-- **Cinematic UI**: boot sequence, HUD panels with corner brackets, scanlines, reactive AI core, gold/cyan glow, fully responsive
+- **Cinematic UI**: boot sequence, HUD panels with corner brackets, scanlines, vignette, reactive AI core, message animations, gold/cyan glow, fully responsive
+- **Synthesized HUD sound effects** (Web Audio — zero asset files): transmit blips and reply confirmation tones
 - **Keyboard shortcuts**: `/` focus input · `Enter` send · `Ctrl+Space` toggle comms channel
 - **Customizable persona** and callsign (Administrator / Commander) stored as preferences
 
@@ -54,7 +55,7 @@ flowchart LR
         API --> DB[(SQLite)]
     end
 
-    LLM -- "HTTP stream" --> Ollama["Ollama (localhost:11434)\nLlama 3.1"]
+    LLM -- "HTTP stream" --> Ollama["Ollama (localhost:11434)\nLlama 3.2"]
 ```
 
 **Request flow (chat):** browser POSTs to `/api/chat` → backend persists the user message, assembles persona + last 20 messages, streams tokens from Ollama back as SSE frames, then persists the full reply. **Voice flow:** MediaRecorder captures webm → `/api/voice/transcribe` (Whisper) → transcript auto-submitted to chat → reply optionally rendered to WAV by `/api/voice/speak` (Piper) and played in-browser.
@@ -90,8 +91,8 @@ atlas-command/
 **Prerequisites:** Python 3.11+, Node 18+, [Ollama](https://ollama.com/download), ~6 GB disk for models.
 
 ```bash
-git clone https://github.com/<you>/atlas-command && cd atlas-command
-./scripts/setup.sh     # venv + pip, npm install, ollama pull llama3.1, Piper voice download
+git clone https://github.com/amirali-nam/Atlas-Ai.git && cd Atlas-Ai
+./scripts/setup.sh     # venv + pip, npm install, ollama pull llama3.2:3b, Piper voice download
 ./scripts/run.sh       # backend :8000 + frontend :3000
 ```
 
@@ -113,7 +114,7 @@ cd frontend
 npm install && npm run dev
 
 # Models (third terminal)
-ollama pull llama3.1
+ollama pull llama3.2:3b
 # Piper voice: download en_US-ryan-high.onnx (+.json) from
 # https://huggingface.co/rhasspy/piper-voices into backend/models/
 ```
@@ -123,8 +124,8 @@ ollama pull llama3.1
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `OLLAMA_MODEL` | `llama3.1` | Any Ollama model (mistral, gemma2, …) |
-| `WHISPER_MODEL` | `base` | tiny/base/small/medium/large-v3 |
+| `OLLAMA_MODEL` | `llama3.2:3b` | Any Ollama model — use `llama3.1` (8B) with 16 GB+ RAM |
+| `WHISPER_MODEL` | `tiny` | tiny/base/small/medium/large-v3 |
 | `PIPER_VOICE` | `models/en_US-ryan-high.onnx` | Any Piper voice |
 | `ALLOWED_SEARCH_ROOTS` | *(empty = disabled)* | Comma-separated dirs the assistant may search |
 
