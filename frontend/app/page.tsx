@@ -1,8 +1,9 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 
-import AtlasCore from "@/components/AtlasCore";
+import AtlasEmblem from "@/components/AtlasEmblem";
 import BootSequence from "@/components/BootSequence";
+import GlobeBackground from "@/components/GlobeBackground";
 import ChatInput from "@/components/ChatInput";
 import ChatPanel from "@/components/ChatPanel";
 import DataOps from "@/components/DataOps";
@@ -60,7 +61,10 @@ export default function Home() {
   if (!booted) return <BootSequence onDone={() => setBooted(true)} />;
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="relative flex h-screen overflow-hidden">
+      {/* rotating holographic globe, fixed behind everything */}
+      <GlobeBackground />
+
       {/* moving scanline overlay */}
       <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent animate-scanline" />
 
@@ -82,9 +86,9 @@ export default function Home() {
         onClose={() => setSidebarOpen(false)}
       />
 
-      <main className="flex min-w-0 flex-1 flex-col">
+      <main className="relative z-10 flex min-w-0 flex-1 flex-col">
         {/* Top command bar */}
-        <header className="flex items-center gap-4 border-b border-line bg-panel/90 px-4 py-3 md:px-6">
+        <header className="flex items-center gap-4 border-b border-line bg-panel/70 px-4 py-3 backdrop-blur-sm md:px-6">
           <button
             className="text-steel hover:text-gold lg:hidden"
             onClick={() => setSidebarOpen(true)}
@@ -92,7 +96,7 @@ export default function Home() {
           >
             ☰
           </button>
-          <AtlasCore active={busy} listening={voice.listening || voice.recording} level={voice.level} />
+          <AtlasEmblem size={72} active={busy || voice.listening || voice.recording} />
           <div className="min-w-0">
             <h1 className="font-display text-lg font-black tracking-[0.35em] text-gold text-glow-gold md:text-xl">
               ATLAS COMMAND

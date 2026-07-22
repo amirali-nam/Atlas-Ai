@@ -29,7 +29,7 @@ export default function Sidebar({
       {/* mobile scrim */}
       {open && <div className="fixed inset-0 z-30 bg-black/60 lg:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col gap-4 overflow-y-auto border-r border-line bg-panel/95 p-4 transition-transform duration-300 lg:static lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col gap-4 overflow-y-auto border-r border-line bg-panel/95 p-4 transition-transform duration-300 lg:static lg:z-10 lg:translate-x-0 ${open ? "translate-x-0" : "-translate-x-full"}`}
       >
         <button
           onClick={onNew}

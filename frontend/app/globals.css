@@ -70,6 +70,27 @@ body {
   background: rgba(232, 163, 61, 0.5);
 }
 
+/* ATLAS emblem ring animations */
+@keyframes atlasSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes atlasSpinRev {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+@keyframes atlasPulse {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
 /* messages slide up as they arrive */
 .msg-rise {
   animation: rise 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
