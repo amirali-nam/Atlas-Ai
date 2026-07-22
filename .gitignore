@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+.next/
+out/
+npm-debug.log*
+
+# Environment
+.env
+.env.local
+
+# Data / models (downloaded locally, never committed)
+backend/data/*.db
+backend/models/
+*.onnx
+*.onnx.json
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

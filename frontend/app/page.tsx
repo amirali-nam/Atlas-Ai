@@ -1,0 +1,128 @@
+"use client";
+import { useCallback, useEffect, useState } from "react";
+
+import AtlasCore from "@/components/AtlasCore";
+import BootSequence from "@/components/BootSequence";
+import ChatInput from "@/components/ChatInput";
+import ChatPanel from "@/components/ChatPanel";
+import Sidebar from "@/components/Sidebar";
+import { useChat } from "@/hooks/useChat";
+import { useSystemStats } from "@/hooks/useSystemStats";
+import { useVoice } from "@/hooks/useVoice";
+import { deleteConversation, getConversations } from "@/lib/api";
+import type { ConversationSummary } from "@/lib/types";
+
+export default function Home() {
+  const [booted, setBooted] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [liveText, setLiveText] = useState("");
+
+  const { stats, health } = useSystemStats();
+  const { messages, send, busy, conversationId, loadConversation, newConversation } =
+    useChat(voiceEnabled);
+
+  const handleTranscript = useCallback(
+    (text: string) => {
+      setLiveText(text);
+      void send(text);
+      setTimeout(() => setLiveText(""), 2000);
+    },
+    [send],
+  );
+
+  const voice = useVoice(handleTranscript);
+
+  const refreshConversations = useCallback(async () => {
+    try {
+      setConversations(await getConversations());
+    } catch {
+      /* backend offline */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshConversations();
+  }, [refreshConversations, busy]);
+
+  const handleDelete = useCallback(
+    async (id: number) => {
+      await deleteConversation(id);
+      if (id === conversationId) newConversation();
+      void refreshConversations();
+    },
+    [conversationId, newConversation, refreshConversations],
+  );
+
+  if (!booted) return <BootSequence onDone={() => setBooted(true)} />;
+
+  return (
+    <div className="flex h-screen overflow-hidden">
+      {/* moving scanline overlay */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent animate-scanline" />
+
+      <Sidebar
+        conversations={conversations}
+        activeId={conversationId}
+        onSelect={(id) => {
+          void loadConversation(id);
+          setSidebarOpen(false);
+        }}
+        onNew={() => {
+          newConversation();
+          setSidebarOpen(false);
+        }}
+        onDelete={(id) => void handleDelete(id)}
+        stats={stats}
+        health={health}
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+      />
+
+      <main className="flex min-w-0 flex-1 flex-col">
+        {/* Top command bar */}
+        <header className="flex items-center gap-4 border-b border-line bg-panel/90 px-4 py-3 md:px-6">
+          <button
+            className="text-steel hover:text-gold lg:hidden"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="Open sidebar"
+          >
+            ☰
+          </button>
+          <AtlasCore active={busy} listening={voice.listening || voice.recording} level={voice.level} />
+          <div className="min-w-0">
+            <h1 className="font-display text-lg font-black tracking-[0.35em] text-gold text-glow-gold md:text-xl">
+              ATLAS COMMAND
+            </h1>
+            <p className="truncate font-mono text-[11px] tracking-widest text-steel">
+              {health?.ollama.online
+                ? `NEURAL LINK ACTIVE · ${health.ollama.active_model.toUpperCase()} · ZERO EGRESS`
+                : "NEURAL LINK OFFLINE — START OLLAMA"}
+            </p>
+          </div>
+          <div className="ml-auto hidden text-right font-mono text-[11px] text-steel md:block">
+            <p className="text-cyan text-glow-cyan">ADMINISTRATOR</p>
+            <p>CLEARANCE: LEVEL 5</p>
+          </div>
+        </header>
+
+        <ChatPanel messages={messages} />
+
+        <ChatInput
+          onSend={(t) => void send(t)}
+          busy={busy}
+          recording={voice.recording}
+          listening={voice.listening}
+          transcribing={voice.transcribing}
+          onPushStart={() => void voice.startPushToTalk()}
+          onPushEnd={voice.stopPushToTalk}
+          onToggleListening={() => void voice.toggleListening()}
+          voiceEnabled={voiceEnabled}
+          onToggleVoice={() => setVoiceEnabled((v) => !v)}
+          liveText={liveText}
+        />
+      </main>
+    </div>
+  );
+}
