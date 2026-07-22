@@ -25,6 +25,7 @@ ATLAS (Autonomous Tactical Logistics & Analysis System) is a privacy-first AI as
 
 ## Features
 
+- **Tactical Data Ops**: drop in a CSV/Excel file and ATLAS profiles it locally with pandas — stats, missing data, HUD-styled distribution charts, correlation intel — then answers natural-language questions about it with the dataset briefing injected into the LLM's context
 - **Streaming chat** with a local LLM (Ollama · Llama 3.2 3B by default — fast even on 8 GB machines; swap in any larger model via `.env`) over Server-Sent Events
 - **Voice in**: offline speech-to-text (faster-whisper) with push-to-talk *and* always-listening mode with silence detection
 - **Voice out**: offline TTS (Piper, `en_US-ryan-high` — deep and authoritative)

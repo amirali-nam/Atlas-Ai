@@ -46,10 +46,27 @@ export const getSystemStats = (): Promise<SystemStats> =>
 export const getHealth = (): Promise<HealthStatus> =>
   fetch("/api/system/health").then((r) => r.json());
 
+/** Binary payloads travel as base64 JSON, direct to FastAPI: some security
+ *  software / filtering proxies block multipart bodies, while JSON passes. */
+export const BACKEND_URL = "http://127.0.0.1:8000";
+
+/** Blob/File → base64 (without the data: URL prefix). */
+export function toBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onload = () => resolve((fr.result as string).split(",", 2)[1] ?? "");
+    fr.onerror = () => reject(fr.error);
+    fr.readAsDataURL(blob);
+  });
+}
+
 export async function transcribeAudio(blob: Blob): Promise<string> {
-  const form = new FormData();
-  form.append("audio", blob, "capture.webm");
-  const res = await fetch("/api/voice/transcribe", { method: "POST", body: form });
+  const audio_b64 = await toBase64(blob);
+  const res = await fetch(`${BACKEND_URL}/api/voice/transcribe`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ audio_b64 }),
+  });
   if (!res.ok) throw new Error("Transcription failed");
   return (await res.json()).text as string;
 }

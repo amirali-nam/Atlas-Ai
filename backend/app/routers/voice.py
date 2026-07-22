@@ -1,7 +1,13 @@
-"""Voice endpoints: offline STT (faster-whisper) and TTS (Piper)."""
-from fastapi import APIRouter, HTTPException, UploadFile
+"""Voice endpoints: offline STT (faster-whisper) and TTS (Piper).
+
+Audio arrives as base64 in JSON (not multipart) — see analysis router note.
+"""
+import base64
+
+from fastapi import APIRouter, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import Response
+from pydantic import BaseModel, Field
 
 from ..schemas import SpeakRequest
 from ..services import stt_service, tts_service
@@ -11,9 +17,16 @@ router = APIRouter(prefix="/api/voice", tags=["voice"])
 MAX_AUDIO_BYTES = 25 * 1024 * 1024
 
 
+class TranscribeRequest(BaseModel):
+    audio_b64: str = Field(min_length=1)
+
+
 @router.post("/transcribe")
-async def transcribe(audio: UploadFile):
-    data = await audio.read()
+async def transcribe(req: TranscribeRequest):
+    try:
+        data = base64.b64decode(req.audio_b64)
+    except Exception as exc:
+        raise HTTPException(400, "Invalid base64 payload") from exc
     if not data:
         raise HTTPException(400, "Empty audio upload")
     if len(data) > MAX_AUDIO_BYTES:

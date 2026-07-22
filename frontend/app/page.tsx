@@ -5,6 +5,7 @@ import AtlasCore from "@/components/AtlasCore";
 import BootSequence from "@/components/BootSequence";
 import ChatInput from "@/components/ChatInput";
 import ChatPanel from "@/components/ChatPanel";
+import DataOps from "@/components/DataOps";
 import Sidebar from "@/components/Sidebar";
 import { useChat } from "@/hooks/useChat";
 import { useSystemStats } from "@/hooks/useSystemStats";
@@ -14,6 +15,7 @@ import type { ConversationSummary } from "@/lib/types";
 
 export default function Home() {
   const [booted, setBooted] = useState(false);
+  const [mode, setMode] = useState<"comms" | "dataops">("comms");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
@@ -101,27 +103,53 @@ export default function Home() {
                 : "NEURAL LINK OFFLINE — START OLLAMA"}
             </p>
           </div>
-          <div className="ml-auto hidden text-right font-mono text-[11px] text-steel md:block">
+          {/* Mode tabs */}
+          <nav className="ml-auto flex gap-1">
+            {(
+              [
+                ["comms", "COMMS"],
+                ["dataops", "DATA OPS"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setMode(key)}
+                className={`hud-panel px-3 py-1.5 font-display text-[10px] font-bold tracking-[0.2em] transition-all ${
+                  mode === key
+                    ? "border-gold/70 text-gold shadow-glow-gold"
+                    : "text-steel hover:text-gold"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+          <div className="hidden text-right font-mono text-[11px] text-steel md:block">
             <p className="text-cyan text-glow-cyan">ADMINISTRATOR</p>
             <p>CLEARANCE: LEVEL 5</p>
           </div>
         </header>
 
-        <ChatPanel messages={messages} />
-
-        <ChatInput
-          onSend={(t) => void send(t)}
-          busy={busy}
-          recording={voice.recording}
-          listening={voice.listening}
-          transcribing={voice.transcribing}
-          onPushStart={() => void voice.startPushToTalk()}
-          onPushEnd={voice.stopPushToTalk}
-          onToggleListening={() => void voice.toggleListening()}
-          voiceEnabled={voiceEnabled}
-          onToggleVoice={() => setVoiceEnabled((v) => !v)}
-          liveText={liveText}
-        />
+        {mode === "dataops" ? (
+          <DataOps />
+        ) : (
+          <>
+            <ChatPanel messages={messages} />
+            <ChatInput
+              onSend={(t) => void send(t)}
+              busy={busy}
+              recording={voice.recording}
+              listening={voice.listening}
+              transcribing={voice.transcribing}
+              onPushStart={() => void voice.startPushToTalk()}
+              onPushEnd={voice.stopPushToTalk}
+              onToggleListening={() => void voice.toggleListening()}
+              voiceEnabled={voiceEnabled}
+              onToggleVoice={() => setVoiceEnabled((v) => !v)}
+              liveText={liveText}
+            />
+          </>
+        )}
       </main>
     </div>
   );

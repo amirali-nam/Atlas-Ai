@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import settings
 from .database import init_db
-from .routers import chat, commands, files, settings as settings_router, system, voice
+from .routers import analysis, chat, commands, files, settings as settings_router, system, voice
 
 
 @asynccontextmanager
@@ -24,12 +24,13 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.frontend_origin],
+    # Any localhost port — still loopback-only, so nothing external is admitted.
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-for r in (chat.router, voice.router, system.router, files.router, commands.router, settings_router.router):
+for r in (chat.router, voice.router, system.router, files.router, commands.router, settings_router.router, analysis.router):
     app.include_router(r)
 
 
