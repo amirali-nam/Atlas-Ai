@@ -23,10 +23,14 @@ router = APIRouter(prefix="/api/op", tags=["dataops"])
 MAX_UPLOAD = 30 * 1024 * 1024  # 30 MB
 
 ANALYST_DIRECTIVE = """
-CURRENT ASSIGNMENT: tactical data analysis. A dataset briefing follows. Answer the
-Administrator's questions using ONLY the briefing below — cite concrete numbers from it.
-If the briefing cannot answer the question, say exactly what additional data is needed.
-Plain text only, 1-4 sentences.
+CURRENT ASSIGNMENT: tactical data analysis. A dataset briefing and the FULL DATA
+table follow. Answer the Administrator's questions using ONLY this data.
+
+- To answer about a specific record, find its row in FULL DATA (match the ID exactly,
+  e.g. L033) and report that row's field values. If the ID is not present, say so.
+- For aggregate questions, count/scan the rows precisely — do not estimate.
+- Never invent values that are not in the data. Empty field = missing/unknown.
+- Plain text. Be concise, but include every requested field.
 """
 
 
@@ -69,9 +73,13 @@ async def query(req: AskRequest):
         {"role": "user", "content": req.question},
     ]
 
+    # Larger context to fit the full data table; low temperature for factual,
+    # non-hallucinated answers grounded in the rows.
+    opts = {"num_ctx": 4096, "num_predict": 500, "temperature": 0.15}
+
     async def event_stream():
         try:
-            async for token in ollama_service.stream_chat(messages):
+            async for token in ollama_service.stream_chat(messages, options=opts):
                 yield f"data: {json.dumps({'type': 'token', 'content': token})}\n\n"
         except Exception as exc:
             yield f"data: {json.dumps({'type': 'error', 'content': f'LLM link failure: {exc}'})}\n\n"

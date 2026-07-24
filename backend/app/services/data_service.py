@@ -149,7 +149,26 @@ def context_for_llm(ds_id: str) -> str | None:
     if p["correlations"]:
         lines.append("STRONGEST CORRELATIONS: " + ", ".join(
             f"{c['a']}~{c['b']} r={c['r']}" for c in p["correlations"]))
-    lines.append("SAMPLE ROWS: " + str(p["sample"][:3]))
+
+    # Full data table so the model can answer row-specific questions
+    # ("tell me everything about L033"). Capped by a character budget; larger
+    # datasets are truncated with a note. Values are raw (local processing only).
+    df = entry["df"]
+    cols = [str(c) for c in df.columns]
+    lines.append("")
+    lines.append("FULL DATA (one record per line, fields separated by | ):")
+    lines.append(" | ".join(cols))
+    budget = 9000
+    used = sum(len(x) for x in lines)
+    shown = 0
+    for _, row in df.iterrows():
+        line = " | ".join("" if pd.isna(row[c]) else str(row[c]) for c in cols)
+        if used + len(line) > budget:
+            lines.append(f"...({len(df) - shown} more rows not shown — ask about specific IDs)")
+            break
+        lines.append(line)
+        used += len(line) + 1
+        shown += 1
     return "\n".join(lines)
 
 
