@@ -89,15 +89,42 @@ atlas-command/
 
 ## Getting started
 
-**Prerequisites:** Python 3.11+, Node 18+, [Ollama](https://ollama.com/download), ~6 GB disk for models.
+**Prerequisites:** [Python 3.10+](https://www.python.org/downloads/), [Node 18+](https://nodejs.org/), [Ollama](https://ollama.com/download), ~6 GB disk for models.
+
+First, clone the repo:
 
 ```bash
 git clone https://github.com/amirali-nam/Atlas-Ai.git && cd Atlas-Ai
-./scripts/setup.sh     # venv + pip, npm install, ollama pull llama3.2:3b, Piper voice download
+```
+
+### Easiest: double-click launcher
+
+No terminal needed after cloning. The launcher installs everything on first run, then starts the servers and opens the browser automatically.
+
+- **macOS** — double-click **`Launch ATLAS (Mac).command`**
+  (first time only, macOS may block it: right-click → **Open** → **Open**)
+- **Windows** — double-click **`Launch ATLAS (Windows).bat`**
+
+### Or use the scripts
+
+```bash
+./scripts/setup.sh     # macOS/Linux — venv + npm install + ollama pull + Piper voice
 ./scripts/run.sh       # backend :8000 + frontend :3000
 ```
 
+```bat
+scripts\setup.bat      REM Windows — same, one time
+scripts\run.bat        REM starts both servers
+```
+
 Open **http://localhost:3000**. API docs live at http://localhost:8000/docs.
+
+> **Voice model note:** if `VOCAL SYNTH` shows OFFLINE, the Piper voice didn't download. Grab it manually into `backend/models/`:
+> ```
+> curl -L -o backend/models/en_US-ryan-high.onnx https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx
+> curl -L -o backend/models/en_US-ryan-high.onnx.json https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/high/en_US-ryan-high.onnx.json
+> ```
+> then restart the backend.
 
 <details>
 <summary><b>Manual setup / Windows</b></summary>
