@@ -5,16 +5,16 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Atlas Corporation palette
-        void: "#050607",
-        panel: "#0b0e10",
-        "panel-2": "#11151a",
-        line: "#1f262e",
-        gold: "#e8a33d",
-        amber: "#ff8a2a",
-        cyan: "#37d5e5",
-        steel: "#8a97a5",
-        ghost: "#c9d3dd",
+        // Atlas palette — black · red · steel-white
+        void: "#050506",
+        panel: "#0c0d0f",
+        "panel-2": "#131518",
+        line: "#242830",
+        gold: "#e5342b", // primary accent (red) — class names kept for stability
+        amber: "#ff5a3d", // hot / alert red
+        cyan: "#dfe7ef", // secondary accent (steel white)
+        steel: "#8a94a0",
+        ghost: "#d3d9e0",
       },
       fontFamily: {
         display: ["var(--font-orbitron)", "sans-serif"],
@@ -22,8 +22,8 @@ const config: Config = {
         mono: ["ui-monospace", "SFMono-Regular", "monospace"],
       },
       boxShadow: {
-        "glow-gold": "0 0 12px rgba(232,163,61,0.35), 0 0 32px rgba(232,163,61,0.12)",
-        "glow-cyan": "0 0 12px rgba(55,213,229,0.35), 0 0 32px rgba(55,213,229,0.12)",
+        "glow-gold": "0 0 12px rgba(229,52,43,0.40), 0 0 34px rgba(229,52,43,0.15)",
+        "glow-cyan": "0 0 12px rgba(223,231,239,0.30), 0 0 30px rgba(223,231,239,0.10)",
       },
       keyframes: {
         scanline: { "0%": { transform: "translateY(-100%)" }, "100%": { transform: "translateY(100vh)" } },

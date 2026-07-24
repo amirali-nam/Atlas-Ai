@@ -49,7 +49,7 @@ export default function GlobeBackground() {
         const sphere = new THREE.SphereGeometry(5, 36, 24);
         const wire = new THREE.LineSegments(
           new THREE.WireframeGeometry(sphere),
-          new THREE.LineBasicMaterial({ color: 0xe8a33d, transparent: true, opacity: 0.16 }),
+          new THREE.LineBasicMaterial({ color: 0xe5342b, transparent: true, opacity: 0.18 }),
         );
         globe.add(wire);
 
@@ -68,14 +68,14 @@ export default function GlobeBackground() {
         dotGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
         const dots = new THREE.Points(
           dotGeo,
-          new THREE.PointsMaterial({ color: 0x37d5e5, size: 0.06, transparent: true, opacity: 0.7 }),
+          new THREE.PointsMaterial({ color: 0xdfe7ef, size: 0.06, transparent: true, opacity: 0.75 }),
         );
         globe.add(dots);
 
         // 3 — faint outer atmosphere ring
         const ring = new THREE.Mesh(
           new THREE.RingGeometry(6.4, 6.5, 96),
-          new THREE.MeshBasicMaterial({ color: 0x37d5e5, transparent: true, opacity: 0.12, side: THREE.DoubleSide }),
+          new THREE.MeshBasicMaterial({ color: 0xe5342b, transparent: true, opacity: 0.14, side: THREE.DoubleSide }),
         );
         ring.rotation.x = Math.PI / 2.2;
         globe.add(ring);
