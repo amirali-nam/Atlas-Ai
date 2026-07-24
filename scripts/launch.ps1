@@ -9,15 +9,16 @@ function Write-Center($text, $color) {
 Clear-Host
 $banner = @"
 
-     █████╗ ████████╗██╗      █████╗ ███████╗
-    ██╔══██╗╚══██╔══╝██║     ██╔══██╗██╔════╝
-    ███████║   ██║   ██║     ███████║███████╗
-    ██╔══██║   ██║   ██║     ██╔══██║╚════██║
-    ██║  ██║   ██║   ███████╗██║  ██║███████║
-    ╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝
+     /\     |''''''| |'|      /''''\   |''''''|
+    /  \       |'|   |'|     |'|__|'|  |'|____
+   /____\      |'|   |'|     |'|__|'|   \____'|
+  /'|  |'\     |'|   |'|___  |'|  |'|   ____|'|
+ /'/    \'\    |'|   |'____| |'|  |'|  |'_____|
 "@
-Write-Host $banner -ForegroundColor DarkYellow
-Write-Host "    TACTICAL AI COMMAND SYSTEM   //   ZERO EGRESS" -ForegroundColor Cyan
+Write-Host $banner -ForegroundColor Red
+Write-Host "     T A C T I C A L   A I   C O M M A N D   S Y S T E M" -ForegroundColor Gray
+Write-Host "     ---------------------------------------------------" -ForegroundColor DarkRed
+Write-Host "     ZERO EGRESS  //  FULLY LOCAL  //  ATLAS CORE ONLINE" -ForegroundColor DarkGray
 Write-Host ""
 
 # --- First-time setup ---------------------------------------------------
