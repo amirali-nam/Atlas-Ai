@@ -65,9 +65,6 @@ export default function Home() {
       {/* rotating holographic globe, fixed behind everything */}
       <GlobeBackground />
 
-      {/* moving scanline overlay */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent animate-scanline" />
-
       <Sidebar
         conversations={conversations}
         activeId={conversationId}
