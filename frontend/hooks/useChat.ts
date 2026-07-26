@@ -11,6 +11,21 @@ const uid = () => `m${++nextId}-${Date.now()}`;
 /** Secret override passphrase — unlocks CLASSIFIED mode. */
 const OVERRIDE_CODE = "anonymousmamad-aislove";
 
+/** Browser-native speech fallback — deep, authoritative, no setup required. */
+function browserSpeak(text: string) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.98;
+  u.pitch = 0.75; // lower = deeper, more "ATLAS"
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find((v) =>
+    /daniel|david|alex|george|male|en-GB|en-US/i.test(`${v.name} ${v.lang}`),
+  );
+  if (preferred) u.voice = preferred;
+  window.speechSynthesis.speak(u);
+}
+
 export function useChat(voiceEnabled: boolean, onOverride?: () => void) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<number | null>(null);
@@ -18,12 +33,20 @@ export function useChat(voiceEnabled: boolean, onOverride?: () => void) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const playReply = useCallback(async (text: string) => {
-    const wav = await speak(text);
-    if (!wav) return;
-    audioRef.current?.pause();
-    const audio = new Audio(URL.createObjectURL(wav));
-    audioRef.current = audio;
-    void audio.play().catch(() => undefined);
+    const clean = text.replace(/[*#`_>-]+/g, " ").replace(/\s+/g, " ").trim();
+    if (!clean) return;
+
+    // 1 — preferred: local Piper voice (deep, offline)
+    const wav = await speak(clean);
+    if (wav) {
+      audioRef.current?.pause();
+      const audio = new Audio(URL.createObjectURL(wav));
+      audioRef.current = audio;
+      void audio.play().catch(() => browserSpeak(clean));
+      return;
+    }
+    // 2 — fallback: browser speech synthesis (works everywhere, zero setup)
+    browserSpeak(clean);
   }, []);
 
   const send = useCallback(

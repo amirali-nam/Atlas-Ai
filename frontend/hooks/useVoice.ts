@@ -8,34 +8,63 @@ import { transcribeAudio } from "@/lib/api";
  *  - push-to-talk: hold to record, release to transcribe
  *  - always-listening: silence detection auto-segments speech
  */
+/** Pick the first audio recording format this browser actually supports.
+ *  Windows Chrome/Edge don't always support bare "audio/webm". */
+function pickMimeType(): string {
+  if (typeof MediaRecorder === "undefined") return "";
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/ogg;codecs=opus",
+    "audio/mp4",
+    "audio/mpeg",
+  ];
+  for (const c of candidates) {
+    if (MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return "";
+}
+
 export function useVoice(onTranscript: (text: string) => void) {
   const [recording, setRecording] = useState(false);
   const [listening, setListening] = useState(false);
   const [level, setLevel] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const mimeRef = useRef<string>("");
   const rafRef = useRef<number>(0);
   const silenceSinceRef = useRef<number>(0);
   const spokeRef = useRef(false);
   const listeningRef = useRef(false);
 
   const finishSegment = useCallback(async () => {
-    const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+    const blob = new Blob(chunksRef.current, { type: mimeRef.current || "audio/webm" });
     chunksRef.current = [];
-    if (blob.size < 2000) return; // ignore micro-noises
+    if (blob.size < 1200) return; // ignore micro-noises
     setTranscribing(true);
     try {
       const text = await transcribeAudio(blob);
-      if (text) onTranscript(text);
+      if (text) {
+        setError(null);
+        onTranscript(text);
+      } else {
+        setError("No speech detected — try again.");
+      }
     } catch {
-      /* backend offline — swallow */
+      setError("Transcription failed — is the backend running?");
     } finally {
       setTranscribing(false);
     }
   }, [onTranscript]);
+
+  const makeRecorder = useCallback((stream: MediaStream): MediaRecorder => {
+    const mime = mimeRef.current;
+    return mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+  }, []);
 
   const stopAll = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -50,9 +79,13 @@ export function useVoice(onTranscript: (text: string) => void) {
   }, []);
 
   const startRecorder = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error("Microphone not available in this browser.");
+    }
+    mimeRef.current = pickMimeType();
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     streamRef.current = stream;
-    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
+    const recorder = makeRecorder(stream);
     recorderRef.current = recorder;
     chunksRef.current = [];
     recorder.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
@@ -86,7 +119,7 @@ export function useVoice(onTranscript: (text: string) => void) {
           spokeRef.current = false;
           setTimeout(() => {
             if (listeningRef.current && streamRef.current) {
-              const r2 = new MediaRecorder(streamRef.current, { mimeType: "audio/webm" });
+              const r2 = makeRecorder(streamRef.current);
               recorderRef.current = r2;
               chunksRef.current = [];
               r2.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
@@ -103,11 +136,17 @@ export function useVoice(onTranscript: (text: string) => void) {
 
   const startPushToTalk = useCallback(async () => {
     if (recording || listening) return;
+    setError(null);
     setRecording(true);
     try {
       await startRecorder();
-    } catch {
+    } catch (e) {
       setRecording(false);
+      setError(
+        e instanceof DOMException && e.name === "NotAllowedError"
+          ? "Microphone blocked — allow mic access in the browser and reload."
+          : "Could not start microphone.",
+      );
     }
   }, [recording, listening, startRecorder]);
 
@@ -121,17 +160,32 @@ export function useVoice(onTranscript: (text: string) => void) {
       stopAll();
       return;
     }
+    setError(null);
     setListening(true);
     listeningRef.current = true;
     try {
       await startRecorder();
-    } catch {
+    } catch (e) {
       setListening(false);
       listeningRef.current = false;
+      setError(
+        e instanceof DOMException && e.name === "NotAllowedError"
+          ? "Microphone blocked — allow mic access in the browser and reload."
+          : "Could not start microphone.",
+      );
     }
   }, [listening, startRecorder, stopAll]);
 
   useEffect(() => stopAll, [stopAll]);
 
-  return { recording, listening, level, transcribing, startPushToTalk, stopPushToTalk, toggleListening };
+  return {
+    recording,
+    listening,
+    level,
+    transcribing,
+    error,
+    startPushToTalk,
+    stopPushToTalk,
+    toggleListening,
+  };
 }

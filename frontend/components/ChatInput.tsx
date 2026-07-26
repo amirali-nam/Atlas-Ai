@@ -13,6 +13,7 @@ export default function ChatInput({
   voiceEnabled,
   onToggleVoice,
   liveText,
+  voiceError,
 }: {
   onSend: (text: string) => void;
   busy: boolean;
@@ -25,6 +26,7 @@ export default function ChatInput({
   voiceEnabled: boolean;
   onToggleVoice: () => void;
   liveText: string;
+  voiceError?: string | null;
 }) {
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -58,6 +60,9 @@ export default function ChatInput({
           {transcribing ? "▸ DECODING TRANSMISSION…" : listening ? "▸ COMMS CHANNEL OPEN — SPEAK FREELY" : "▸ RECORDING — RELEASE TO TRANSMIT"}
           {liveText && <span className="ml-2 text-ghost/80">{liveText}</span>}
         </p>
+      )}
+      {voiceError && !recording && !listening && !transcribing && (
+        <p className="mb-2 font-mono text-xs text-amber">⚠ {voiceError}</p>
       )}
       <div className="flex items-end gap-2">
         {/* Push-to-talk */}

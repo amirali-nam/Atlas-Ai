@@ -71,11 +71,17 @@ export async function transcribeAudio(blob: Blob): Promise<string> {
   return (await res.json()).text as string;
 }
 
+/** Piper TTS. Returns a WAV blob, or null if Piper isn't available (503) —
+ *  callers fall back to the browser's built-in speech synthesis. */
 export async function speak(text: string): Promise<Blob | null> {
-  const res = await fetch("/api/voice/speak", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
-  return res.ok ? res.blob() : null;
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/voice/speak`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    });
+    return res.ok ? res.blob() : null;
+  } catch {
+    return null;
+  }
 }

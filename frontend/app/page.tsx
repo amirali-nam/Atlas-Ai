@@ -191,6 +191,7 @@ export default function Home() {
               voiceEnabled={voiceEnabled}
               onToggleVoice={() => setVoiceEnabled((v) => !v)}
               liveText={liveText}
+              voiceError={voice.error}
             />
           </>
         )}
