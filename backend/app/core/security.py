@@ -20,6 +20,13 @@ APPROVED_COMMANDS: dict[str, tuple[str, list[str]]] = {
     "hostname": ("Host name", ["hostname"]),
     "disk_usage": ("Disk usage", ["df", "-h"] if not _IS_WINDOWS else ["powershell", "-c", "Get-PSDrive -PSProvider FileSystem"]),
     "network_info": ("Network interfaces", ["ifconfig"] if _IS_MAC else (["ipconfig"] if _IS_WINDOWS else ["ip", "addr"])),
+    # Read-only, own-machine only. Defensive/diagnostic — lists which ports THIS
+    # computer is listening on. Never scans or touches any other host.
+    "open_ports": (
+        "Local listening ports",
+        ["lsof", "-nP", "-iTCP", "-sTCP:LISTEN"] if _IS_MAC
+        else (["netstat", "-an", "-p", "tcp"] if _IS_WINDOWS else ["ss", "-tlnH"]),
+    ),
 }
 
 

@@ -75,14 +75,18 @@ TOOL_SPECS = [
         "function": {
             "name": "run_system_command",
             "description": "Run one APPROVED, read-only system command and return its output. "
-            "Allowed command ids: uptime, date, whoami, hostname, disk_usage, network_info. "
+            "Allowed command ids: uptime, date, whoami, hostname, disk_usage, network_info, "
+            "open_ports (this machine's own listening ports — defensive audit). "
             "Use for precise system facts.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "command_id": {
                         "type": "string",
-                        "enum": ["uptime", "date", "whoami", "hostname", "disk_usage", "network_info"],
+                        "enum": [
+                            "uptime", "date", "whoami", "hostname",
+                            "disk_usage", "network_info", "open_ports",
+                        ],
                     }
                 },
                 "required": ["command_id"],
