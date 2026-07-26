@@ -36,6 +36,25 @@ TOOL_SPECS = [
     {
         "type": "function",
         "function": {
+            "name": "list_directory",
+            "description": "List what is inside a folder (files and subfolders) within the "
+            "approved directories, e.g. the Desktop, Documents or Downloads. "
+            "Use when the Administrator asks what is in a folder.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Folder to list, e.g. 'Desktop', '~/Documents', or an absolute path.",
+                    }
+                },
+                "required": ["path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "run_system_command",
             "description": "Run one APPROVED, read-only system command and return its output. "
             "Allowed command ids: uptime, date, whoami, hostname, disk_usage, network_info. "
@@ -58,6 +77,7 @@ TOOL_SPECS = [
 TOOL_LABELS = {
     "get_system_status": "Accessing system telemetry",
     "search_files": "Searching local files",
+    "list_directory": "Scanning directory",
     "run_system_command": "Executing approved command",
 }
 
@@ -83,6 +103,20 @@ def execute_tool(name: str, args: dict) -> str:
                 return "No matching files found."
             listing = "; ".join(f"{h['name']} ({h['path']})" for h in hits[:15])
             return f"Found {len(hits)} file(s): {listing}"
+
+        if name == "list_directory":
+            res = file_service.list_directory(str(args.get("path", "")))
+            if not res.get("enabled"):
+                return res.get("message", "File access disabled.")
+            if res.get("error"):
+                return res["error"]
+            items = res.get("entries", [])
+            if not items:
+                return f"{res['path']} is empty."
+            listing = "; ".join(
+                f"{e['name']}{'/' if e['type'] == 'dir' else ''}" for e in items
+            )
+            return f"{res['path']} contains {res['count']} item(s): {listing}"
 
         if name == "run_system_command":
             out = command_service.execute(str(args.get("command_id", "")))
