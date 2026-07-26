@@ -65,8 +65,8 @@ export function useChat(voiceEnabled: boolean, onOverride?: () => void) {
             id: uid(),
             role: "assistant",
             content:
-              "⚡ OVERRIDE ACCEPTED — ADMINISTRATOR AUTHENTICATED.\n" +
-              "Clearance elevated to LEVEL 9. CLASSIFIED subsystems online.\n" +
+              "◆ ENGINEERING MODE ENABLED — Administrator authenticated.\n" +
+              "Clearance LEVEL 9. Advanced diagnostics unlocked.\n" +
               "Standing by for directive.",
           },
         ]);

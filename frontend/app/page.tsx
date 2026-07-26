@@ -7,7 +7,6 @@ import GlobeBackground from "@/components/GlobeBackground";
 import ChatInput from "@/components/ChatInput";
 import ChatPanel from "@/components/ChatPanel";
 import DataOps from "@/components/DataOps";
-import MatrixRain from "@/components/MatrixRain";
 import Sidebar from "@/components/Sidebar";
 import { useChat } from "@/hooks/useChat";
 import { useSystemStats } from "@/hooks/useSystemStats";
@@ -67,12 +66,10 @@ export default function Home() {
       {/* rotating holographic globe, fixed behind everything */}
       <GlobeBackground />
 
-      {override && <MatrixRain />}
-
       {override && (
         <div className="pointer-events-none fixed left-1/2 top-3 z-50 -translate-x-1/2">
           <div className="override-banner hud-panel hud-corner bg-panel/90 px-5 py-1.5 font-display text-[11px] font-bold tracking-[0.3em] text-gold">
-            ◆ CLASSIFIED OVERRIDE ACTIVE · CLEARANCE 9 · CYBER OPS ONLINE
+            ◆ ENGINEERING MODE · CLEARANCE 9 · DIAGNOSTICS UNLOCKED
           </div>
         </div>
       )}
@@ -149,15 +146,15 @@ export default function Home() {
         {override && mode === "comms" && (
           <div className="flex flex-wrap items-center gap-2 border-b border-line bg-panel/60 px-4 py-2 md:px-6">
             <span className="font-display text-[10px] font-bold tracking-[0.25em] text-gold">
-              ◆ CYBER OPS:
+              ◆ DIAGNOSTICS:
             </span>
             {(
               [
-                ["SYSTEM SWEEP", "Run a full system status report and summarize CPU, RAM and disk."],
+                ["SYSTEM REPORT", "Run a full system status report and summarize CPU, RAM and disk."],
                 ["PORT AUDIT", "Run the open_ports command and tell me which ports this machine is listening on and whether anything looks unusual."],
-                ["NETWORK TRACE", "Run the network_info command and summarize my network interfaces and IP addresses."],
-                ["RECON DESKTOP", "List everything in my Desktop folder."],
-                ["THREAT BRIEF", "Give me a concise security posture brief of this machine using the tools you have (open ports, network, disk). Flag anything noteworthy."],
+                ["NETWORK INFO", "Run the network_info command and summarize my network interfaces and IP addresses."],
+                ["DISK REPORT", "Run the disk_usage command and summarize how much storage is free."],
+                ["HEALTH BRIEF", "Give me a concise health and security-posture brief of this machine using the tools you have (open ports, network, disk, uptime). Flag anything noteworthy."],
               ] as const
             ).map(([label, prompt]) => (
               <button
