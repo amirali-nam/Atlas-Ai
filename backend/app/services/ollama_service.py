@@ -19,6 +19,29 @@ async def check_health() -> dict:
         return {"online": False, "models": [], "active_model": settings.ollama_model}
 
 
+async def chat_once(
+    messages: list[dict], tools: list[dict] | None = None, options: dict | None = None
+) -> dict:
+    """Single non-streaming /api/chat call. Returns the full response dict
+    (message may contain tool_calls). Used by the agentic loop."""
+    opts = {"num_ctx": 4096, "num_predict": 500}
+    if options:
+        opts.update(options)
+    payload: dict = {
+        "model": settings.ollama_model,
+        "messages": messages,
+        "stream": False,
+        "keep_alive": "30m",
+        "options": opts,
+    }
+    if tools:
+        payload["tools"] = tools
+    async with httpx.AsyncClient(timeout=None) as client:
+        r = await client.post(f"{settings.ollama_url}/api/chat", json=payload)
+        r.raise_for_status()
+        return r.json()
+
+
 async def stream_chat(
     messages: list[dict], model: str | None = None, options: dict | None = None
 ) -> AsyncIterator[str]:

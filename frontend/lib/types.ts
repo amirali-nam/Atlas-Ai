@@ -3,6 +3,7 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
   pending?: boolean;
+  tools?: string[]; // labels of tools ATLAS invoked while answering
 }
 
 export interface ConversationSummary {
@@ -30,5 +31,6 @@ export interface HealthStatus {
 export type SseEvent =
   | { type: "meta"; conversation_id: number }
   | { type: "token"; content: string }
+  | { type: "tool"; content: string }
   | { type: "error"; content: string }
   | { type: "done" };

@@ -40,6 +40,15 @@ export function useChat(voiceEnabled: boolean) {
       try {
         await streamChat(trimmed, conversationId, (e) => {
           if (e.type === "meta") setConversationId(e.conversation_id);
+          if (e.type === "tool") {
+            setMessages((m) =>
+              m.map((msg) =>
+                msg.id === assistantId
+                  ? { ...msg, tools: [...(msg.tools ?? []), e.content] }
+                  : msg,
+              ),
+            );
+          }
           if (e.type === "token" || e.type === "error") {
             reply += e.content;
             setMessages((m) =>

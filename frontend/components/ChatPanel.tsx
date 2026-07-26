@@ -51,6 +51,15 @@ export default function ChatPanel({ messages }: { messages: ChatMessage[] }) {
             >
               {m.role === "user" ? "ADMINISTRATOR" : "ATLAS"}
             </p>
+            {m.tools && m.tools.length > 0 && (
+              <div className="mb-2 space-y-1">
+                {m.tools.map((t, i) => (
+                  <p key={i} className="flex items-center gap-1.5 font-mono text-[11px] text-cyan/80">
+                    <span className="text-gold">▸</span> {t}…
+                  </p>
+                ))}
+              </div>
+            )}
             <div className={`whitespace-pre-wrap ${m.pending && !m.content ? "caret" : ""}`}>
               {renderLite(m.content)}
               {m.pending && m.content && <span className="caret" />}
