@@ -3,11 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { transcribeAudio } from "@/lib/api";
 
-/**
- * Microphone capture with two modes:
- *  - push-to-talk: hold to record, release to transcribe
- *  - always-listening: silence detection auto-segments speech
- */
 /** Pick the first audio recording format this browser actually supports.
  *  Windows Chrome/Edge don't always support bare "audio/webm". */
 function pickMimeType(): string {
@@ -25,6 +20,14 @@ function pickMimeType(): string {
   return "";
 }
 
+/**
+ * Microphone capture with two modes:
+ *  - push-to-talk: hold to record, release to transcribe
+ *  - always-listening: silence detection auto-segments continuous speech
+ *
+ * Each speech segment gets its own recorder + its own chunk buffer, so
+ * segmentation works repeatedly (no shared-buffer races).
+ */
 export function useVoice(onTranscript: (text: string) => void) {
   const [recording, setRecording] = useState(false);
   const [listening, setListening] = useState(false);
@@ -34,71 +37,64 @@ export function useVoice(onTranscript: (text: string) => void) {
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const audioCtxRef = useRef<AudioContext | null>(null);
   const mimeRef = useRef<string>("");
   const rafRef = useRef<number>(0);
-  const silenceSinceRef = useRef<number>(0);
+  const lastVoiceRef = useRef<number>(0);
   const spokeRef = useRef(false);
   const listeningRef = useRef(false);
 
-  const finishSegment = useCallback(async () => {
-    const blob = new Blob(chunksRef.current, { type: mimeRef.current || "audio/webm" });
-    chunksRef.current = [];
-    if (blob.size < 1200) return; // ignore micro-noises
-    setTranscribing(true);
-    try {
-      const text = await transcribeAudio(blob);
-      if (text) {
-        setError(null);
-        onTranscript(text);
-      } else {
-        setError("No speech detected — try again.");
+  const transcribeChunks = useCallback(
+    async (chunks: Blob[]) => {
+      const blob = new Blob(chunks, { type: mimeRef.current || "audio/webm" });
+      if (blob.size < 1200) return; // ignore clicks / micro-noise
+      setTranscribing(true);
+      try {
+        const text = await transcribeAudio(blob);
+        if (text) {
+          setError(null);
+          onTranscript(text);
+        }
+      } catch {
+        setError("Transcription failed — is the backend running?");
+      } finally {
+        setTranscribing(false);
       }
-    } catch {
-      setError("Transcription failed — is the backend running?");
-    } finally {
-      setTranscribing(false);
-    }
-  }, [onTranscript]);
+    },
+    [onTranscript],
+  );
 
-  const makeRecorder = useCallback((stream: MediaStream): MediaRecorder => {
-    const mime = mimeRef.current;
-    return mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
-  }, []);
+  /** Create + start a fresh recorder that owns its own chunk buffer. */
+  const startSegment = useCallback(() => {
+    const stream = streamRef.current;
+    if (!stream) return;
+    const rec = mimeRef.current
+      ? new MediaRecorder(stream, { mimeType: mimeRef.current })
+      : new MediaRecorder(stream);
+    const localChunks: Blob[] = [];
+    recorderRef.current = rec;
+    rec.ondataavailable = (e) => e.data.size > 0 && localChunks.push(e.data);
+    rec.onstop = () => void transcribeChunks(localChunks);
+    rec.start(250);
+  }, [transcribeChunks]);
 
-  const stopAll = useCallback(() => {
-    cancelAnimationFrame(rafRef.current);
-    recorderRef.current?.state !== "inactive" && recorderRef.current?.stop();
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    recorderRef.current = null;
-    streamRef.current = null;
-    setRecording(false);
-    setListening(false);
-    listeningRef.current = false;
-    setLevel(0);
-  }, []);
-
-  const startRecorder = useCallback(async () => {
+  const openMic = useCallback(async () => {
     if (!navigator.mediaDevices?.getUserMedia) {
       throw new Error("Microphone not available in this browser.");
     }
     mimeRef.current = pickMimeType();
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     streamRef.current = stream;
-    const recorder = makeRecorder(stream);
-    recorderRef.current = recorder;
-    chunksRef.current = [];
-    recorder.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
-    recorder.onstop = () => void finishSegment();
-    recorder.start(250);
+    startSegment();
 
-    // live input level for the HUD visualizer
+    // live input level + silence detection for always-listening mode
     const ctx = new AudioContext();
+    audioCtxRef.current = ctx;
     const analyser = ctx.createAnalyser();
     analyser.fftSize = 512;
     ctx.createMediaStreamSource(stream).connect(analyser);
     const data = new Uint8Array(analyser.frequencyBinCount);
-    silenceSinceRef.current = performance.now();
+    lastVoiceRef.current = performance.now();
     spokeRef.current = false;
 
     const tick = () => {
@@ -110,45 +106,55 @@ export function useVoice(onTranscript: (text: string) => void) {
 
       if (listeningRef.current) {
         const now = performance.now();
-        if (rms > 0.04) {
+        if (rms > 0.045) {
           spokeRef.current = true;
-          silenceSinceRef.current = now;
-        } else if (spokeRef.current && now - silenceSinceRef.current > 1400) {
-          // speech segment ended → restart recorder to flush + transcribe
-          recorder.stop();
+          lastVoiceRef.current = now;
+        } else if (spokeRef.current && now - lastVoiceRef.current > 1100) {
+          // end of an utterance → close this segment and open the next
           spokeRef.current = false;
+          const rec = recorderRef.current;
+          if (rec && rec.state !== "inactive") rec.stop(); // fires transcribe
           setTimeout(() => {
-            if (listeningRef.current && streamRef.current) {
-              const r2 = makeRecorder(streamRef.current);
-              recorderRef.current = r2;
-              chunksRef.current = [];
-              r2.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
-              r2.onstop = () => void finishSegment();
-              r2.start(250);
-            }
-          }, 50);
+            if (listeningRef.current) startSegment();
+          }, 60);
         }
       }
       rafRef.current = requestAnimationFrame(tick);
     };
     tick();
-  }, [finishSegment]);
+  }, [startSegment]);
+
+  const stopAll = useCallback(() => {
+    cancelAnimationFrame(rafRef.current);
+    const rec = recorderRef.current;
+    if (rec && rec.state !== "inactive") rec.stop();
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    void audioCtxRef.current?.close().catch(() => undefined);
+    recorderRef.current = null;
+    streamRef.current = null;
+    audioCtxRef.current = null;
+    setRecording(false);
+    setListening(false);
+    listeningRef.current = false;
+    setLevel(0);
+  }, []);
+
+  const micErr = (e: unknown) =>
+    e instanceof DOMException && e.name === "NotAllowedError"
+      ? "Microphone blocked — allow mic access in the browser and reload."
+      : "Could not start microphone.";
 
   const startPushToTalk = useCallback(async () => {
     if (recording || listening) return;
     setError(null);
     setRecording(true);
     try {
-      await startRecorder();
+      await openMic();
     } catch (e) {
       setRecording(false);
-      setError(
-        e instanceof DOMException && e.name === "NotAllowedError"
-          ? "Microphone blocked — allow mic access in the browser and reload."
-          : "Could not start microphone.",
-      );
+      setError(micErr(e));
     }
-  }, [recording, listening, startRecorder]);
+  }, [recording, listening, openMic]);
 
   const stopPushToTalk = useCallback(() => {
     if (!recording) return;
@@ -164,17 +170,13 @@ export function useVoice(onTranscript: (text: string) => void) {
     setListening(true);
     listeningRef.current = true;
     try {
-      await startRecorder();
+      await openMic();
     } catch (e) {
       setListening(false);
       listeningRef.current = false;
-      setError(
-        e instanceof DOMException && e.name === "NotAllowedError"
-          ? "Microphone blocked — allow mic access in the browser and reload."
-          : "Could not start microphone.",
-      );
+      setError(micErr(e));
     }
-  }, [listening, startRecorder, stopAll]);
+  }, [listening, openMic, stopAll]);
 
   useEffect(() => stopAll, [stopAll]);
 

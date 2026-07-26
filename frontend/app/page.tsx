@@ -30,7 +30,7 @@ export default function Home() {
   const handleTranscript = useCallback(
     (text: string) => {
       setLiveText(text);
-      void send(text);
+      void send(text, true); // spoke to ATLAS → always get a spoken reply
       setTimeout(() => setLiveText(""), 2000);
     },
     [send],

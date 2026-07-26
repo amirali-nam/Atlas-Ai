@@ -50,7 +50,7 @@ export function useChat(voiceEnabled: boolean, onOverride?: () => void) {
   }, []);
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, forceSpeak = false) => {
       const trimmed = text.trim();
       if (!trimmed || busy) return;
 
@@ -115,7 +115,9 @@ export function useChat(voiceEnabled: boolean, onOverride?: () => void) {
       }
       if (reply && !reply.startsWith("⚠")) {
         sfxReply();
-        if (voiceEnabled) void playReply(reply);
+        // Speak the reply if voice output is on, OR the user spoke to ATLAS
+        // (talking to it should always get a spoken answer).
+        if (voiceEnabled || forceSpeak) void playReply(reply);
       }
     },
     [busy, conversationId, voiceEnabled, playReply, onOverride],
