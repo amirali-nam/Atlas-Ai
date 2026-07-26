@@ -56,6 +56,56 @@ def _resolve_within_roots(path_str: str) -> Path | None:
     return None
 
 
+READABLE_SUFFIXES = {
+    ".txt", ".md", ".csv", ".tsv", ".json", ".log", ".py", ".js", ".ts", ".tsx",
+    ".jsx", ".html", ".css", ".yml", ".yaml", ".ini", ".cfg", ".toml", ".xml", ".sh",
+}
+MAX_READ_BYTES = 200_000  # ~200 KB cap on what we load into the prompt
+
+
+def _resolve_file_within_roots(path_str: str) -> Path | None:
+    s = (path_str or "").strip()
+    candidates = [
+        Path(s).expanduser(),
+        Path.home() / s.lstrip("~/").lstrip("/"),
+        Path.home() / Path(s).name,
+    ]
+    for c in candidates:
+        try:
+            resolved = c.resolve()
+        except OSError:
+            continue
+        if resolved.exists() and resolved.is_file() and is_path_allowed(resolved):
+            return resolved
+    return None
+
+
+def read_file(path_str: str) -> dict:
+    """Return the text contents of a small text file inside an approved root."""
+    if not settings.search_roots:
+        return {"enabled": False, "message": "File access disabled. Set ALLOWED_SEARCH_ROOTS in backend/.env."}
+
+    target = _resolve_file_within_roots(path_str)
+    if target is None:
+        return {"enabled": True, "error": f"'{path_str}' is not a readable file inside an approved directory."}
+    if target.suffix.lower() not in READABLE_SUFFIXES:
+        return {"enabled": True, "error": f"'{target.name}' is not a supported text file type."}
+
+    try:
+        size = target.stat().st_size
+        with target.open("r", encoding="utf-8", errors="replace") as fh:
+            content = fh.read(MAX_READ_BYTES)
+    except OSError as exc:
+        return {"enabled": True, "error": f"Could not read file: {exc}"}
+
+    return {
+        "enabled": True,
+        "path": str(target),
+        "content": content,
+        "truncated": size > MAX_READ_BYTES,
+    }
+
+
 def list_directory(path_str: str) -> dict:
     """List the immediate contents of a directory inside an approved root."""
     if not settings.search_roots:

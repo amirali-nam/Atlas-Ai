@@ -55,6 +55,24 @@ TOOL_SPECS = [
     {
         "type": "function",
         "function": {
+            "name": "read_file",
+            "description": "Read the text contents of a file (txt, md, csv, json, code, etc.) "
+            "inside an approved directory. Use when asked to read, summarize or quote a file.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "File to read, e.g. 'Desktop/notes.txt' or an absolute path.",
+                    }
+                },
+                "required": ["path"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "run_system_command",
             "description": "Run one APPROVED, read-only system command and return its output. "
             "Allowed command ids: uptime, date, whoami, hostname, disk_usage, network_info. "
@@ -78,6 +96,7 @@ TOOL_LABELS = {
     "get_system_status": "Accessing system telemetry",
     "search_files": "Searching local files",
     "list_directory": "Scanning directory",
+    "read_file": "Reading file",
     "run_system_command": "Executing approved command",
 }
 
@@ -117,6 +136,15 @@ def execute_tool(name: str, args: dict) -> str:
                 f"{e['name']}{'/' if e['type'] == 'dir' else ''}" for e in items
             )
             return f"{res['path']} contains {res['count']} item(s): {listing}"
+
+        if name == "read_file":
+            res = file_service.read_file(str(args.get("path", "")))
+            if not res.get("enabled"):
+                return res.get("message", "File access disabled.")
+            if res.get("error"):
+                return res["error"]
+            note = " (truncated)" if res.get("truncated") else ""
+            return f"Contents of {res['path']}{note}:\n{res['content']}"
 
         if name == "run_system_command":
             out = command_service.execute(str(args.get("command_id", "")))
