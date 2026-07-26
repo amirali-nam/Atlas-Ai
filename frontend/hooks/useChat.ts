@@ -8,7 +8,10 @@ import type { ChatMessage } from "@/lib/types";
 let nextId = 0;
 const uid = () => `m${++nextId}-${Date.now()}`;
 
-export function useChat(voiceEnabled: boolean) {
+/** Secret override passphrase — unlocks CLASSIFIED mode. */
+const OVERRIDE_CODE = "anonymousmamad-aislove";
+
+export function useChat(voiceEnabled: boolean, onOverride?: () => void) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
@@ -27,6 +30,26 @@ export function useChat(voiceEnabled: boolean) {
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || busy) return;
+
+      // Secret override passphrase — never sent to the model
+      if (trimmed.toLowerCase() === OVERRIDE_CODE) {
+        sfxSend();
+        onOverride?.();
+        setMessages((m) => [
+          ...m,
+          { id: uid(), role: "user", content: "••••••••••••••••••••" },
+          {
+            id: uid(),
+            role: "assistant",
+            content:
+              "⚡ OVERRIDE ACCEPTED — ADMINISTRATOR AUTHENTICATED.\n" +
+              "Clearance elevated to LEVEL 9. CLASSIFIED subsystems online.\n" +
+              "Standing by for directive.",
+          },
+        ]);
+        return;
+      }
+
       sfxSend();
       setBusy(true);
       const assistantId = uid();
@@ -72,7 +95,7 @@ export function useChat(voiceEnabled: boolean) {
         if (voiceEnabled) void playReply(reply);
       }
     },
-    [busy, conversationId, voiceEnabled, playReply],
+    [busy, conversationId, voiceEnabled, playReply, onOverride],
   );
 
   const loadConversation = useCallback(async (id: number) => {

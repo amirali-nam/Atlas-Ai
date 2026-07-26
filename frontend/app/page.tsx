@@ -19,12 +19,13 @@ export default function Home() {
   const [mode, setMode] = useState<"comms" | "dataops">("comms");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [override, setOverride] = useState(false);
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [liveText, setLiveText] = useState("");
 
   const { stats, health } = useSystemStats();
   const { messages, send, busy, conversationId, loadConversation, newConversation } =
-    useChat(voiceEnabled);
+    useChat(voiceEnabled, () => setOverride((o) => !o));
 
   const handleTranscript = useCallback(
     (text: string) => {
@@ -61,9 +62,17 @@ export default function Home() {
   if (!booted) return <BootSequence onDone={() => setBooted(true)} />;
 
   return (
-    <div className="relative flex h-screen overflow-hidden">
+    <div className={`relative flex h-screen overflow-hidden ${override ? "override-mode" : ""}`}>
       {/* rotating holographic globe, fixed behind everything */}
       <GlobeBackground />
+
+      {override && (
+        <div className="pointer-events-none fixed left-1/2 top-3 z-50 -translate-x-1/2">
+          <div className="override-banner hud-panel hud-corner bg-panel/90 px-5 py-1.5 font-display text-[11px] font-bold tracking-[0.3em] text-gold">
+            ◆ CLASSIFIED OVERRIDE ACTIVE · CLEARANCE 9
+          </div>
+        </div>
+      )}
 
       <Sidebar
         conversations={conversations}
@@ -127,9 +136,43 @@ export default function Home() {
           </nav>
           <div className="hidden text-right font-mono text-[11px] text-steel md:block">
             <p className="text-cyan text-glow-cyan">ADMINISTRATOR</p>
-            <p>CLEARANCE: LEVEL 5</p>
+            <p className={override ? "text-gold text-glow-gold" : ""}>
+              CLEARANCE: LEVEL {override ? "9 ◆" : "5"}
+            </p>
           </div>
         </header>
+
+        {/* Classified quick-ops — only visible in override mode */}
+        {override && mode === "comms" && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-line bg-panel/60 px-4 py-2 md:px-6">
+            <span className="font-display text-[10px] font-bold tracking-[0.25em] text-gold">
+              ◆ CLASSIFIED OPS:
+            </span>
+            {(
+              [
+                ["SYSTEM SWEEP", "Run a full system status report and summarize CPU, RAM and disk."],
+                ["RECON DESKTOP", "List everything in my Desktop folder."],
+                ["NETWORK TRACE", "Run the network_info command and summarize the result."],
+                ["UPTIME CHECK", "Run the uptime command and report how long this machine has been running."],
+              ] as const
+            ).map(([label, prompt]) => (
+              <button
+                key={label}
+                onClick={() => void send(prompt)}
+                disabled={busy}
+                className="hud-panel px-3 py-1 font-mono text-[10px] tracking-widest text-gold transition-all hover:shadow-glow-gold disabled:opacity-40"
+              >
+                {label}
+              </button>
+            ))}
+            <button
+              onClick={() => setOverride(false)}
+              className="ml-auto hud-panel px-3 py-1 font-mono text-[10px] tracking-widest text-steel hover:text-amber"
+            >
+              LOCK ↩
+            </button>
+          </div>
+        )}
 
         {mode === "dataops" ? (
           <DataOps />
