@@ -66,14 +66,6 @@ export default function Home() {
       {/* rotating holographic globe, fixed behind everything */}
       <GlobeBackground />
 
-      {override && (
-        <div className="pointer-events-none fixed left-1/2 top-3 z-50 -translate-x-1/2">
-          <div className="override-banner hud-panel hud-corner bg-panel/90 px-5 py-1.5 font-display text-[11px] font-bold tracking-[0.3em] text-gold">
-            ◆ ENGINEERING MODE · CLEARANCE 9 · DIAGNOSTICS UNLOCKED
-          </div>
-        </div>
-      )}
-
       <Sidebar
         conversations={conversations}
         activeId={conversationId}
