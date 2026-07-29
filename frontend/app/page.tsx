@@ -20,8 +20,18 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [override, setOverride] = useState(false);
+  const [accent, setAccent] = useState<"red" | "green" | "purple">("red");
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [liveText, setLiveText] = useState("");
+
+  // Whole-UI accent recolour via a single hue-rotate. Engineering mode forces teal.
+  const accentFilter = override
+    ? "hue-rotate(140deg) saturate(0.95)"
+    : accent === "green"
+      ? "hue-rotate(110deg) saturate(1.1)"
+      : accent === "purple"
+        ? "hue-rotate(255deg) saturate(1.15)"
+        : "none";
 
   const { stats, health } = useSystemStats();
   const { messages, send, busy, conversationId, loadConversation, newConversation } =
@@ -62,7 +72,7 @@ export default function Home() {
   if (!booted) return <BootSequence onDone={() => setBooted(true)} />;
 
   return (
-    <div className={`relative flex h-screen overflow-hidden ${override ? "override-mode" : ""}`}>
+    <div className="relative flex h-screen overflow-hidden" style={{ filter: accentFilter }}>
       {/* rotating holographic globe, fixed behind everything */}
       <GlobeBackground />
 
