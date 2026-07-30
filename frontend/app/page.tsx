@@ -136,6 +136,29 @@ export default function Home() {
               </button>
             ))}
           </nav>
+          {/* Accent colour picker */}
+          <div className="hidden items-center gap-1 md:flex">
+            {(
+              [
+                ["red", "RED"],
+                ["green", "GRN"],
+                ["purple", "PRP"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                onClick={() => setAccent(key)}
+                title={`${key} accent`}
+                className={`hud-panel px-2 py-1 font-mono text-[9px] tracking-widest transition-all ${
+                  accent === key && !override
+                    ? "border-gold/70 text-gold shadow-glow-gold"
+                    : "text-steel hover:text-gold"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <div className="hidden text-right font-mono text-[11px] text-steel md:block">
             <p className="text-cyan text-glow-cyan">ADMINISTRATOR</p>
             <p className={override ? "text-gold text-glow-gold" : ""}>
