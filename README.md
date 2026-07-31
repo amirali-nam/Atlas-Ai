@@ -12,6 +12,7 @@ Atlas Corporation aesthetics · zero cloud · zero API keys · zero data egress.
 ![Tailwind](https://img.shields.io/badge/Tailwind-3-06B6D4?logo=tailwindcss&logoColor=white)
 ![Ollama](https://img.shields.io/badge/Ollama-Llama_3.2-black)
 ![License](https://img.shields.io/badge/License-MIT-e8a33d)
+![Status](https://img.shields.io/badge/status-active-brightgreen)
 
 *"Awaiting your directive, Administrator."*
 
